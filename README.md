@@ -1,12 +1,15 @@
 # PySSL: Semi-Supervised Learning Framework
 
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://python.org)
+[![PyPI](https://img.shields.io/pypi/v/semi-supervised-learning)](https://pypi.org/project/semi-supervised-learning/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/pyssl/actions)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)](https://codecov.io/gh/yourusername/pyssl)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue)](https://pyssl.readthedocs.io)
 
 > A modular, scikit-learn compatible framework for semi-supervised learning in Python.
+>
+> **📦 Now available on PyPI:** `pip install semi-supervised-learning`
 
 PySSL provides a flexible and extensible framework for semi-supervised learning that integrates seamlessly with the scikit-learn ecosystem. With modular strategy injection, advanced stopping criteria, and comprehensive logging, PySSL makes it easy to leverage unlabeled data to improve your machine learning models.
 
@@ -66,9 +69,9 @@ Final labeled samples: 340
 
 ## 📦 Installation
 
-### From PyPI (Coming Soon)
+### From PyPI
 ```bash
-pip install pyssl
+pip install semi-supervised-learning
 ```
 
 ### From Source
@@ -84,6 +87,12 @@ git clone https://github.com/yourusername/pyssl.git
 cd pyssl
 pip install -e ".[test]"
 pytest tests/
+```
+
+### Quick Test
+```bash
+# Verify installation
+python -c "from ssl_framework import SelfTrainingClassifier; print('✅ Success!')"
 ```
 
 ## 🎯 Use Cases

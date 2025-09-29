@@ -1,14 +1,51 @@
 [project]
-name = "pyssl"
+name = "semi-supervised-learning"
 version = "0.1.0"
 description = "Semi-Supervised Learning Framework compatible with scikit-learn"
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = [
-    "numpy",
-    "pandas",
-    "scikit-learn",
+license = {text = "MIT"}
+authors = [
+    {name = "PySSL Contributors", email = "pyssl@example.com"}
 ]
+maintainers = [
+    {name = "PySSL Contributors", email = "pyssl@example.com"}
+]
+keywords = [
+    "machine-learning",
+    "semi-supervised-learning",
+    "scikit-learn",
+    "ssl",
+    "self-training",
+    "pseudo-labeling"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "numpy>=1.19.0",
+    "pandas>=1.2.0",
+    "scikit-learn>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/pyssl"
+Documentation = "https://pyssl.readthedocs.io"
+Repository = "https://github.com/yourusername/pyssl.git"
+Issues = "https://github.com/yourusername/pyssl/issues"
+Changelog = "https://github.com/yourusername/pyssl/releases"
 
 [project.optional-dependencies]
 test = [
@@ -22,3 +59,10 @@ docs = [
     "sphinx-autodoc-typehints",
     "nbsphinx",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ssl_framework"]

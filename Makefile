@@ -1,15 +1,18 @@
 # PySSL Makefile for common development tasks
 
-.PHONY: help test docs clean install lint
+.PHONY: help test docs clean install lint build upload upload-test
 
 help:
 	@echo "PySSL Development Commands:"
-	@echo "  install     Install package in development mode"
-	@echo "  test        Run all tests"
-	@echo "  docs        Build documentation"
-	@echo "  clean       Clean build artifacts"
-	@echo "  lint        Run code linting (placeholder)"
-	@echo "  serve-docs  Serve documentation locally"
+	@echo "  install      Install package in development mode"
+	@echo "  test         Run all tests"
+	@echo "  docs         Build documentation"
+	@echo "  clean        Clean build artifacts"
+	@echo "  lint         Run code linting (placeholder)"
+	@echo "  serve-docs   Serve documentation locally"
+	@echo "  build        Build package for PyPI"
+	@echo "  upload-test  Upload to Test PyPI"
+	@echo "  upload       Upload to PyPI (production)"
 
 install:
 	uv pip install -e ".[test,docs]"
@@ -35,3 +38,15 @@ serve-docs: docs
 lint:
 	@echo "Linting placeholder - add your preferred linter here"
 	@echo "Example: uv run ruff check ssl_framework/"
+
+build: clean
+	uv pip install build
+	uv run python -m build
+
+upload-test: build
+	uv pip install twine
+	uv run twine upload --repository testpypi dist/*
+
+upload: build
+	uv pip install twine
+	uv run twine upload dist/*
