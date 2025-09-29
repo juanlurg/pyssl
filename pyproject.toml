@@ -35,9 +35,15 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
+    "jupyter>=1.1.1",
+    "matplotlib>=3.7.5",
     "numpy>=1.19.0",
     "pandas>=1.2.0",
+    "plotly>=6.3.0",
     "scikit-learn>=1.0.0",
+    "seaborn>=0.13.2",
+    "sentence-transformers>=3.2.1",
+    "umap-learn>=0.5.7",
 ]
 
 [project.urls]
