@@ -256,10 +256,91 @@ def test_top_k_with_confidence_weighting():
         assert new_labels_count <= 2, "Should never select more than K=2 samples"
 
 
+def test_labeling_convergence():
+    """Test that training stops when too few new labels are added."""
+    # Create data where most samples will be confidently labeled in first iteration
+    X_labeled = np.array([[0, 0], [10, 10]])
+    y_labeled = np.array([0, 1])
+    X_unlabeled = np.array([[0.1, 0.1], [9.9, 9.9]])  # Very confident samples
+
+    base_model = LogisticRegression(random_state=42)
+
+    # Set high convergence threshold so it stops after first iteration
+    ssl_classifier = SelfTrainingClassifier(
+        base_model=base_model,
+        selection_strategy=ConfidenceThreshold(threshold=0.7),
+        integration_strategy=AppendAndGrow(),
+        labeling_convergence_threshold=10,  # Higher than available samples
+        max_iter=5
+    )
+
+    ssl_classifier.fit(X_labeled, y_labeled, X_unlabeled)
+
+    # Should stop due to labeling convergence
+    assert hasattr(ssl_classifier, 'stopping_reason_'), "Should have stopping reason"
+    assert "convergence" in ssl_classifier.stopping_reason_.lower(), f"Expected convergence stop, got: {ssl_classifier.stopping_reason_}"
+
+    # Should have stopped after processing the few available samples
+    assert len(ssl_classifier.history_) <= 3, "Should stop early due to convergence"
+
+
+def test_early_stopping_with_validation():
+    """Test early stopping based on validation score plateau."""
+    # Create a mock base model that will have decreasing validation scores
+    class MockModel:
+        def __init__(self):
+            self.iteration = 0
+
+        def fit(self, X, y, sample_weight=None):
+            self.iteration += 1
+
+        def predict(self, X):
+            return np.zeros(len(X))
+
+        def predict_proba(self, X):
+            # Always return high confidence for first sample
+            proba = np.zeros((len(X), 2))
+            proba[:, 0] = 0.9
+            proba[:, 1] = 0.1
+            return proba
+
+        def score(self, X, y):
+            # Decreasing validation score to trigger early stopping
+            scores = [0.8, 0.82, 0.81, 0.80, 0.79]  # Peak at iteration 1, then decline
+            return scores[min(self.iteration - 1, len(scores) - 1)]
+
+    X_labeled = np.array([[0, 0], [10, 10]])
+    y_labeled = np.array([0, 1])
+    X_unlabeled = np.array([[1, 1], [9, 9], [2, 2], [8, 8], [3, 3]])
+    X_val = np.array([[0.5, 0.5]])
+    y_val = np.array([0])
+
+    ssl_classifier = SelfTrainingClassifier(
+        base_model=MockModel(),
+        selection_strategy=TopKFixedCount(k=1),  # Always select 1 sample
+        integration_strategy=AppendAndGrow(),
+        patience=2,
+        tol=0.01,
+        labeling_convergence_threshold=1,  # Set lower so it doesn't interfere
+        max_iter=10
+    )
+
+    ssl_classifier.fit(X_labeled, y_labeled, X_unlabeled, X_val, y_val)
+
+    # Should stop due to early stopping (patience exceeded)
+    assert hasattr(ssl_classifier, 'stopping_reason_'), "Should have stopping reason"
+    assert "early stopping" in ssl_classifier.stopping_reason_.lower(), f"Expected early stopping, got: {ssl_classifier.stopping_reason_}"
+
+    # Should have validation scores in history
+    assert any('validation_score' in log for log in ssl_classifier.history_), "History should contain validation scores"
+
+
 if __name__ == "__main__":
     test_initialization_and_fit()
     test_pandas_dataframe_handling()
     test_ssl_loop_increases_labeled_set()
     test_strategy_injection_integration()
     test_top_k_with_confidence_weighting()
+    test_labeling_convergence()
+    test_early_stopping_with_validation()
     print("All tests passed!")
