@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.utils.estimator_checks import check_estimator
 from ssl_framework.main import SelfTrainingClassifier
+from ssl_framework.strategies import ConfidenceThreshold, AppendAndGrow, TopKFixedCount, ConfidenceWeighting
 
 
 def test_initialization_and_fit():
@@ -155,7 +156,17 @@ def test_ssl_loop_increases_labeled_set():
     X_unlabeled = np.array([[0.1, 0.1], [0.2, 0.9], [9.9, 10.1], [10.1, 10.9], [5, 5]])
 
     base_model = LogisticRegression(random_state=42)
-    ssl_classifier = SelfTrainingClassifier(base_model=base_model, threshold=0.7, max_iter=5)
+
+    # Create strategies explicitly
+    selection_strategy = ConfidenceThreshold(threshold=0.7)
+    integration_strategy = AppendAndGrow()
+
+    ssl_classifier = SelfTrainingClassifier(
+        base_model=base_model,
+        selection_strategy=selection_strategy,
+        integration_strategy=integration_strategy,
+        max_iter=5
+    )
 
     # Get initial labeled count
     initial_labeled_count = len(X_labeled)
@@ -184,8 +195,71 @@ def test_ssl_loop_increases_labeled_set():
     assert 0.0 <= first_iteration['average_confidence'] <= 1.0, "Confidence should be between 0 and 1"
 
 
+def test_strategy_injection_integration():
+    """Test that strategy injection works correctly in the SelfTrainingClassifier."""
+    # Create simple test data
+    X_labeled = np.array([[0, 0], [10, 10]])
+    y_labeled = np.array([0, 1])
+    X_unlabeled = np.array([[1, 1], [9, 9]])
+
+    base_model = LogisticRegression(random_state=42)
+
+    # Test with explicit strategies
+    selection_strategy = ConfidenceThreshold(threshold=0.6)
+    integration_strategy = AppendAndGrow()
+
+    ssl_classifier = SelfTrainingClassifier(
+        base_model=base_model,
+        selection_strategy=selection_strategy,
+        integration_strategy=integration_strategy,
+        max_iter=3
+    )
+
+    # Should work without error - this proves the refactoring was successful
+    ssl_classifier.fit(X_labeled, y_labeled, X_unlabeled)
+
+    # Verify that strategies were used (history should be populated)
+    assert hasattr(ssl_classifier, 'history_'), "Should have history attribute"
+    assert len(ssl_classifier.history_) > 0, "Should have at least one iteration in history"
+
+
+def test_top_k_with_confidence_weighting():
+    """Test integration of TopKFixedCount with ConfidenceWeighting."""
+    # Create simple separable data
+    X_labeled = np.array([[0, 0], [10, 10]])
+    y_labeled = np.array([0, 1])
+    X_unlabeled = np.array([[1, 1], [9, 9], [5, 5]])
+
+    base_model = LogisticRegression(random_state=42)
+
+    # Test with TopKFixedCount and ConfidenceWeighting strategies
+    selection_strategy = TopKFixedCount(k=2)
+    integration_strategy = ConfidenceWeighting()
+
+    ssl_classifier = SelfTrainingClassifier(
+        base_model=base_model,
+        selection_strategy=selection_strategy,
+        integration_strategy=integration_strategy,
+        max_iter=2
+    )
+
+    # Should run without error - this proves the integration works
+    ssl_classifier.fit(X_labeled, y_labeled, X_unlabeled)
+
+    # Verify that history was created
+    assert hasattr(ssl_classifier, 'history_'), "Should have history attribute"
+    assert len(ssl_classifier.history_) > 0, "Should have at least one iteration"
+
+    # Verify that K samples were selected in each iteration (if available)
+    for iteration_log in ssl_classifier.history_:
+        new_labels_count = iteration_log['new_labels_count']
+        assert new_labels_count <= 2, "Should never select more than K=2 samples"
+
+
 if __name__ == "__main__":
     test_initialization_and_fit()
     test_pandas_dataframe_handling()
     test_ssl_loop_increases_labeled_set()
+    test_strategy_injection_integration()
+    test_top_k_with_confidence_weighting()
     print("All tests passed!")

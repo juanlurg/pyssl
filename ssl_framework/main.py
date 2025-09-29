@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_is_fitted
+from .strategies import ConfidenceThreshold, AppendAndGrow
 
 
 class SelfTrainingClassifier(BaseEstimator, ClassifierMixin):
@@ -14,7 +15,7 @@ class SelfTrainingClassifier(BaseEstimator, ClassifierMixin):
     on both labeled and pseudo-labeled data, following the scikit-learn API.
     """
 
-    def __init__(self, base_model, max_iter=10, threshold=0.95):
+    def __init__(self, base_model, max_iter=10, selection_strategy=None, integration_strategy=None):
         """Initialize the SelfTrainingClassifier.
 
         Parameters
@@ -23,12 +24,17 @@ class SelfTrainingClassifier(BaseEstimator, ClassifierMixin):
             Base supervised model that implements fit, predict, and predict_proba.
         max_iter : int, default=10
             Maximum number of iterations for the self-training loop.
-        threshold : float, default=0.95
-            Confidence threshold for selecting pseudo-labels.
+        selection_strategy : object, default=None
+            Strategy for selecting which unlabeled samples to pseudo-label.
+            If None, uses ConfidenceThreshold(0.95).
+        integration_strategy : object, default=None
+            Strategy for integrating pseudo-labeled samples into the labeled set.
+            If None, uses AppendAndGrow().
         """
         self.base_model = base_model
         self.max_iter = max_iter
-        self.threshold = threshold
+        self.selection_strategy = selection_strategy or ConfidenceThreshold(0.95)
+        self.integration_strategy = integration_strategy or AppendAndGrow()
 
     def fit(self, X_labeled, y_labeled, X_unlabeled, X_val=None, y_val=None):
         """Fit the self-training classifier.
@@ -117,10 +123,16 @@ class SelfTrainingClassifier(BaseEstimator, ClassifierMixin):
         y_labeled_current = y_labeled.copy()
         X_unlabeled_current = X_unlabeled.copy()
 
+        # Initialize sample weights for the first iteration
+        sample_weights = None
+
         # Iterative self-training loop
         for iteration in range(self.max_iter):
             # Train the base model on current labeled data
-            self.base_model.fit(X_labeled_current, y_labeled_current)
+            if sample_weights is not None:
+                self.base_model.fit(X_labeled_current, y_labeled_current, sample_weight=sample_weights)
+            else:
+                self.base_model.fit(X_labeled_current, y_labeled_current)
 
             # If no unlabeled data left, break
             if len(X_unlabeled_current) == 0:
@@ -129,34 +141,39 @@ class SelfTrainingClassifier(BaseEstimator, ClassifierMixin):
             # Predict probabilities on unlabeled data
             y_proba = self.base_model.predict_proba(X_unlabeled_current)
 
-            # Label Selection (Hardcoded): Find samples with max probability > threshold
-            max_proba = np.max(y_proba, axis=1)
-            confident_indices = np.where(max_proba > self.threshold)[0]
+            # Label Selection: Use strategy to select samples for pseudo-labeling
+            X_new_pseudo, y_new_pseudo, indices_to_remove = self.selection_strategy.select_labels(
+                X_unlabeled_current, y_proba
+            )
 
-            # If no new samples meet threshold, break
-            if len(confident_indices) == 0:
+            # If no new samples selected, break
+            if len(X_new_pseudo) == 0:
                 break
 
-            # Get pseudo-labels and corresponding features for selected samples
-            y_new_pseudo = np.argmax(y_proba[confident_indices], axis=1)
-            X_new_pseudo = X_unlabeled_current[confident_indices]
-            new_confidences = max_proba[confident_indices]
+            # Calculate confidences for logging
+            if len(indices_to_remove) > 0:
+                max_proba = np.max(y_proba, axis=1)
+                new_confidences = max_proba[indices_to_remove]
+            else:
+                new_confidences = np.array([])
 
             # Logging: Calculate and store metrics for this iteration
             iteration_log = {
                 'iteration': iteration,
                 'labeled_data_count': len(X_labeled_current),
-                'new_labels_count': len(confident_indices),
+                'new_labels_count': len(X_new_pseudo),
                 'average_confidence': np.mean(new_confidences) if len(new_confidences) > 0 else 0.0
             }
             self.history_.append(iteration_log)
 
-            # Label Integration (Hardcoded): Append new pseudo-labeled data
-            X_labeled_current = np.vstack([X_labeled_current, X_new_pseudo])
-            y_labeled_current = np.hstack([y_labeled_current, y_new_pseudo])
+            # Label Integration: Use strategy to integrate pseudo-labeled data
+            X_labeled_current, y_labeled_current, sample_weights = self.integration_strategy.integrate_labels(
+                X_labeled_current, y_labeled_current, X_new_pseudo, y_new_pseudo,
+                y_proba=y_proba, indices=indices_to_remove
+            )
 
             # Remove newly labeled samples from unlabeled set
-            X_unlabeled_current = np.delete(X_unlabeled_current, confident_indices, axis=0)
+            X_unlabeled_current = np.delete(X_unlabeled_current, indices_to_remove, axis=0)
 
         return self
 
