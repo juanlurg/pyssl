@@ -131,17 +131,17 @@ ssl_model = SelfTrainingClassifier(
 
 ## 📚 Documentation
 
-- **[Getting Started](docs/getting_started.md)**: Installation and first steps
-- **[User Guide](docs/user_guide/)**: Comprehensive tutorials and examples
-- **[API Reference](docs/api/)**: Complete API documentation
-- **[Theory](docs/theory/)**: Semi-supervised learning background
-- **[Examples](examples/)**: Real-world use cases and benchmarks
+- **[Getting Started](https://pyssl.readthedocs.io/en/latest/getting_started.html)**: Installation and first steps
+- **[Installation Guide](https://pyssl.readthedocs.io/en/latest/installation.html)**: Complete installation instructions
+- **[5-Minute Tutorial](https://pyssl.readthedocs.io/en/latest/quickstart_tutorial.html)**: Quick hands-on tutorial
+- **[API Reference](https://pyssl.readthedocs.io/en/latest/api/index.html)**: Complete API documentation
+- **[Contributing](https://pyssl.readthedocs.io/en/latest/contributing.html)**: How to contribute to PySSL
 
 ## 🤝 Contributing
 
 We welcome contributions! PySSL is designed to be extensible and community-driven.
 
-- **[Contributing Guide](CONTRIBUTING.md)**: How to contribute
+- **[Contributing Guide](https://pyssl.readthedocs.io/en/latest/contributing.html)**: How to contribute
 - **[Code of Conduct](CODE_OF_CONDUCT.md)**: Community guidelines
 - **[Issue Tracker](https://github.com/yourusername/pyssl/issues)**: Bug reports and feature requests
 
@@ -162,7 +162,7 @@ PySSL consistently outperforms supervised baselines when unlabeled data follows 
 | UCI Adult | 0.792 | 0.847 | +6.9% |
 | Digits | 0.612 | 0.891 | +45.6% |
 
-*Results with 5% labeled data. See [benchmarks](docs/benchmarks/) for details.*
+*Results with 5% labeled data. See [documentation](https://pyssl.readthedocs.io) for details.*
 
 ## 🔗 Related Projects
 
@@ -188,4 +188,4 @@ PySSL is released under the [MIT License](LICENSE).
 
 ---
 
-**Ready to leverage your unlabeled data?** Start with our [Getting Started Guide](docs/getting_started.md)! 🚀
+**Ready to leverage your unlabeled data?** Start with our [Getting Started Guide](https://pyssl.readthedocs.io/en/latest/getting_started.html)! 🚀
