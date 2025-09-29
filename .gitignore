@@ -1,0 +1,6 @@
+specs.md
+prompt_plan.md
+todo.md
+.claude/
+.venv/
+__pycache__/

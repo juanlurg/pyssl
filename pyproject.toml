@@ -1,0 +1,17 @@
+[project]
+name = "pyssl"
+version = "0.1.0"
+description = "Semi-Supervised Learning Framework compatible with scikit-learn"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "numpy",
+    "pandas",
+    "scikit-learn",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+]
